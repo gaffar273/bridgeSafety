@@ -232,7 +232,9 @@ async function getBridgeOptions(fromChainRaw, toChainRaw, fromTokenRaw, amountRa
                 executionDuration: formatDuration(r.steps[0].estimate.executionDuration),
                 riskScore: risk.score,
                 securityVerdict: risk.verdict,
-                securityReason: risk.explanation
+                securityReason: risk.explanation,
+                tvl: security.tvl,
+                feeDetails: fees
             };
         }));
 
@@ -275,11 +277,11 @@ async function getSecurityStats(bridgeName) {
         if (tvlRes.status === 'fulfilled' && tvlRes.value.data.tvl) {
             // Handle different DefiLlama response structures
             const rawTvl = Array.isArray(tvlRes.value.data.tvl)
-                ? tvlRes.value.data.tvl.reduce((a, b) => a + b.totalLiquidityUSD, 0)
+                ? (tvlRes.value.data.tvl[tvlRes.value.data.tvl.length - 1]?.totalLiquidityUSD || 0)
                 : tvlRes.value.data.currentChainTvls
                     ? Object.values(tvlRes.value.data.currentChainTvls).reduce((a, b) => a + b, 0)
                     : 0;
-            tvl = `$${(rawTvl / 1_000_000).toFixed(2)}M`;
+            tvl = rawTvl > 0 ? `$${(rawTvl / 1_000_000).toFixed(2)}M` : "N/A";
         }
 
         if (hacksRes.status === 'fulfilled') {
@@ -366,7 +368,7 @@ function calculateRiskScore(securityStats) {
     }
 
     // Rule 2: TVL Assessment
-    if (securityStats.tvl === "Unknown") {
+    if (securityStats.tvl === "Unknown" || securityStats.tvl === "N/A") {
         score -= 30;
         rules.push("Penalty: TVL data unavailable (-30)");
     } else {

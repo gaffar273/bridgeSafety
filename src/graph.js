@@ -108,12 +108,17 @@ async function callModel(state) {
     
     3. **PRESENTATION** (The most important part):
        - Present a table of choices.
-       - **Columns**: | Bridge | Net Output | Bridge Fee | Li.Fi Fee | Risk | Est. Duration |
+       - **Columns**: | Bridge | Net Output | Bridge Fee | Li.Fi Fee | Risk (TVL) | Est. Duration |
        - **Li.Fi Fee Rule**: If 'aggregatorFeeUSD' is $0.00, LEAVE IT EMPTY or write "-". Do NOT show "$0.00" unless relevant.
-       - **Bridge Fee**: This is the 'protocolFeeUSD' (paid to Across, Stargate, etc).
-       - **Duration**: Use the pre-formatted string provided by the tool (e.g., "3m", "1h 20m"). 
+       - **Bridge Fee**: This is the 'protocolFeeUSD'. *Note*: This includes LP fees + Destination Gas/Relayer fees (total protocol cost).
+       - **Risk (TVL)**: Show the verdict AND the TVL from the tool. Example: "SECURE ($500M)". 
          - Do NOT try to convert seconds yourself, the tool does it.
        - **Gas Cost**: Mention the Gas Cost USD in text below the table (it's usually separate).
+       - **Fee Breakdown**: If 'protocolFeeUSD' is significant (> $1), PROACTIVELY explain it using 'feeDetails'.
+         - Example: "Note: The $3.75 Bridge Fee includes $1.25 LP Fee and $2.49 Relayer Fee."
+         - This is CRITICAL for user trust when fees seem high.
+       - **Money Saving Tip**: If 'aggregatorFeeUSD' > 0, tell the user: 
+         - "💡 **Tip**: You can save the **$2.50 Li.Fi Fee** by using the [Bridge Name] official site directly."
     
     4. Provide a final recommendation (SECURE, CAUTION, or DANGER).
        - If a route is "DANGER" (Risk Score < 40), warn user explicitly.
