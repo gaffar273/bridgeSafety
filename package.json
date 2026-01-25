@@ -1,0 +1,26 @@
+{
+  "name": "bridgesafety",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node src/cli.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "@langchain/core": "^1.1.16",
+    "@langchain/google-vertexai": "^2.1.12",
+    "@langchain/langgraph": "^1.1.2",
+    "axios": "^1.13.2",
+    "chalk": "^5.6.2",
+    "commander": "^14.0.2",
+    "dotenv": "^17.2.3",
+    "express": "^5.2.1",
+    "open": "^11.0.0",
+    "openai": "^6.16.0",
+    "uuid": "^13.0.0"
+  }
+}
