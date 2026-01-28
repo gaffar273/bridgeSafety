@@ -11,7 +11,6 @@ const model = new ChatVertexAI({
     location: process.env.LOCATION
 });
 
-// --- STEP 1: PARSE NATURAL LANGUAGE ---
 async function parseIntent(userInput) {
     const prompt = `
     You are a Blockchain Transaction Parser.
@@ -40,11 +39,11 @@ async function parseIntent(userInput) {
     }
 }
 
-// --- STEP 2: MAIN AGENT LOOP ---
+
 async function runAgent(userInput) {
     console.log(`\n💬 Processing: "${userInput}"`);
 
-    // A. Understand Intent
+    
     const intent = await parseIntent(userInput);
     if (!intent || !intent.fromChain || !intent.toChain) {
         console.log(" Could not understand the request. Please specify From, To, and Amount.");
@@ -52,7 +51,7 @@ async function runAgent(userInput) {
     }
     console.log(`✅ Intent: Transfer ${intent.amount} ${intent.token} (${intent.fromChain} -> ${intent.toChain})`);
 
-    // B. Find Route
+    
     console.log("🔍 Finding best bridge route...");
     const route = await getRoute(intent.fromChain, intent.toChain, intent.token, intent.amount);
 
@@ -62,12 +61,11 @@ async function runAgent(userInput) {
     }
     console.log(`-> Selected Bridge: ${route.bridgeName.toUpperCase()} (Est. Gas: $${route.gasCostUSD})`);
 
-    // C. Check Security
+   
     console.log(`  Running security audit on ${route.bridgeName}...`);
     const security = await getSecurityStats(route.bridgeName);
 
-    // D. Final Reasoning
-    // D. Final Reasoning (Deterministic)
+    
     console.log(" Calculating risk score...");
     const riskAnalysis = calculateRiskScore(security);
 
@@ -88,7 +86,7 @@ async function runAgent(userInput) {
     console.log("📝 Generating report summary...");
     const finalRes = await model.invoke([new HumanMessage(advisorPrompt)]);
 
-    // Output result
+    
     try {
         const aiOutput = JSON.parse(finalRes.content.replace(/```json/g, "").replace(/```/g, "").trim());
         return {

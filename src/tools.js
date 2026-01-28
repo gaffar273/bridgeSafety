@@ -1,9 +1,7 @@
 const axios = require('axios');
 
-// --- CONSTANTS ---
-// Maps user slang to Li.Fi technical keys
 const CHAIN_MAP = {
-    // Ethereum & L2s
+
     'eth': 1, 'mainnet': 1, 'ethereum': 1,
     'arb': 42161, 'arbitrum': 42161,
     'opt': 10, 'optimism': 10, 'op': 10,
@@ -11,22 +9,19 @@ const CHAIN_MAP = {
     'pol': 137, 'polygon': 137, 'matic': 137,
     'zksync': 324, 'era': 324,
     'linea': 59144,
-    'blast': 81457,
-    // BSC Ecosystem
+
     'bsc': 56, 'bnb': 56, 'binance': 56,
     'opbnb': 204,
-    // Others
+
     'ava': 43114, 'avalanche': 43114,
     'sol': 'sol', 'solana': 'sol'
 };
 
-// Cache for DefiLlama protocols to avoid re-fetching
 let allProtocolsCache = null;
 
-// --- HELPER FUNCTIONS ---
 
 function normalizeChain(input) {
-    if (!input) return 'eth'; // Default
+    if (!input) return 'eth';
     if (typeof input === 'number') return input;
     const key = input.toLowerCase().trim();
     return CHAIN_MAP[key] || key;
@@ -43,11 +38,9 @@ function formatDuration(seconds) {
     return `${hr}h ${remMin}m`;
 }
 
-// Fetch and Cache DefiLlama Protocols
 async function getProtocolSlug(bridgeName) {
     const searchName = bridgeName.toLowerCase().trim();
 
-    // Explicit overrides for common mismatches
     const overrides = {
         'cbridge': 'celer-network',
         'amarok': 'connext',
@@ -57,18 +50,12 @@ async function getProtocolSlug(bridgeName) {
 
     try {
         if (!allProtocolsCache) {
-            // console.log("Fetching full protocol list from DefiLlama...");
-            const res = await axios.get('https://api.llama.fi/protocols', { timeout: 15000 });
+            const res = await axios.get('https://api.llama.fi/protocols', { timeout: 30000 });
             allProtocolsCache = res.data;
         }
 
-        // Fuzzy search in the list
-        // 1. Exact slug match
         const exact = allProtocolsCache.find(p => p.slug === searchName || p.name.toLowerCase() === searchName);
         if (exact) return exact.slug;
-
-        // 2. Contains match (e.g. 'hop' -> 'hop-protocol')
-        // OR searchName contains slug (e.g. 'stargatev2' -> 'stargate')
         const bestMatch = allProtocolsCache.find(p =>
             p.slug.includes(searchName) ||
             p.name.toLowerCase().includes(searchName) ||
@@ -77,7 +64,6 @@ async function getProtocolSlug(bridgeName) {
 
         if (bestMatch) return bestMatch.slug;
 
-        // 3. Try stripping version suffixes (e.g. 'stargatev2' -> 'stargate')
         const strippedName = searchName.replace(/v\d+$/i, '');
         if (strippedName !== searchName) {
             const strippedMatch = allProtocolsCache.find(p =>
@@ -87,26 +73,19 @@ async function getProtocolSlug(bridgeName) {
             if (strippedMatch) return strippedMatch.slug;
         }
 
-        return bridgeName; // Fallback to input if not found
+        return bridgeName;
     } catch (e) {
-        // Fallback if API fails
         return overrides[searchName] || searchName;
     }
 }
 
-// --- EXPORTED TOOLS ---
 
-// 1. Get Technical Route
 async function getRoute(fromChainRaw, toChainRaw, fromTokenRaw, amountRaw, toTokenRaw) {
     const fromChain = normalizeChain(fromChainRaw);
     const toChain = normalizeChain(toChainRaw);
     const toToken = toTokenRaw || fromTokenRaw;
 
-    // Resolve Amounts
     let amount = amountRaw;
-    // Note: In single getRoute, we assume user might have passed atomic or not. 
-    // Ideally we'd use getTokenDetails to check decimals here too if strictly needed, 
-    // but for now keeping it simple as this tool is legacy/fallback vs getBridgeOptions.
 
     try {
         const res = await axios.get('https://li.quest/v1/quote', {
@@ -123,7 +102,6 @@ async function getRoute(fromChainRaw, toChainRaw, fromTokenRaw, amountRaw, toTok
 
         const data = res.data;
 
-        // Extract Fees
         const fees = (data.estimate.feeCosts || []).map(f => ({
             name: f.name,
             amount: f.amount,
@@ -132,7 +110,7 @@ async function getRoute(fromChainRaw, toChainRaw, fromTokenRaw, amountRaw, toTok
         }));
 
         const gas = (data.estimate.gasCosts || []).map(g => ({
-            type: g.type, // e.g. 'SEND'
+            type: g.type,
             amountUSD: g.amountUSD,
             symbol: g.token.symbol,
             limit: g.limit
@@ -140,7 +118,6 @@ async function getRoute(fromChainRaw, toChainRaw, fromTokenRaw, amountRaw, toTok
 
         const totalGasUSD = gas.reduce((sum, g) => sum + parseFloat(g.amountUSD || 0), 0);
 
-        // Split Fees: Aggregator (Li.Fi) vs Protocol (Bridge/Relayer)
         const aggregatorFees = fees.filter(f => f.name.includes('LIFI'));
         const protocolFees = fees.filter(f => !f.name.includes('LIFI'));
 
@@ -150,10 +127,10 @@ async function getRoute(fromChainRaw, toChainRaw, fromTokenRaw, amountRaw, toTok
         return {
             success: true,
             bridgeName: data.toolDetails.key,
-            estimatedTime: formatDuration(data.estimate.executionDuration), // Formatted
+            estimatedTime: formatDuration(data.estimate.executionDuration),
             gasCostUSD: totalGasUSD.toFixed(4),
             protocolFeeUSD: protocolFeeUSD.toFixed(4),
-            aggregatorFeeUSD: aggregatorFeeUSD.toFixed(4), // Li.Fi Fee
+            aggregatorFeeUSD: aggregatorFeeUSD.toFixed(4),
             feeDetails: fees,
             gasDetails: gas,
             tokenAddress: data.action.fromToken.address,
@@ -169,8 +146,6 @@ async function getRoute(fromChainRaw, toChainRaw, fromTokenRaw, amountRaw, toTok
     }
 }
 
-// 1.5 Get Multi-Bridge Comparison
-// 1.5 Get Multi-Bridge Comparison
 async function getBridgeOptions(fromChainRaw, toChainRaw, fromTokenRaw, amountRaw, toTokenRaw) {
     const fromChain = normalizeChain(fromChainRaw);
     const toChain = normalizeChain(toChainRaw);
@@ -214,11 +189,9 @@ async function getBridgeOptions(fromChainRaw, toChainRaw, fromTokenRaw, amountRa
         const routes = await Promise.all(res.data.routes.map(async (r) => {
             const bridgeKey = r.steps[0].toolDetails.key;
 
-            // Get Risk (Parallel) with improved lookup
             const security = await getSecurityStats(bridgeKey);
             const risk = calculateRiskScore(security);
 
-            // Calculate Fees
             const fees = (r.steps[0].estimate.feeCosts || []);
             const aggUSD = fees.filter(f => f.name.includes('LIFI')).reduce((sum, f) => sum + parseFloat(f.amountUSD || 0), 0);
             const protUSD = fees.filter(f => !f.name.includes('LIFI')).reduce((sum, f) => sum + parseFloat(f.amountUSD || 0), 0);
@@ -245,7 +218,6 @@ async function getBridgeOptions(fromChainRaw, toChainRaw, fromTokenRaw, amountRa
     }
 }
 
-// 4. List Supported Bridges
 async function getSupportedBridges() {
     try {
         const res = await axios.get('https://li.quest/v1/tools', { timeout: 10000 });
@@ -260,7 +232,7 @@ async function getSupportedBridges() {
     }
 }
 
-// 2. Get Security Context
+
 async function getSecurityStats(bridgeName) {
     const slug = await getProtocolSlug(bridgeName);
 
@@ -271,7 +243,7 @@ async function getSecurityStats(bridgeName) {
             axios.get('https://api.llama.fi/hacks', { timeout: 10000 })
         ]);
 
-        let tvl = "Unknown";
+        let tvl = "N/A";
         let hacks = [];
 
         if (tvlRes.status === 'fulfilled' && tvlRes.value.data.tvl) {
@@ -356,7 +328,6 @@ function calculateRiskScore(securityStats) {
     let score = 100;
     const rules = [];
 
-    // Rule 1: Hacks (Critical)
     if (securityStats.recent_hack_count > 0) {
         score = 0;
         rules.push("CRITICAL: Protocol was hacked recently.");
@@ -367,20 +338,17 @@ function calculateRiskScore(securityStats) {
         };
     }
 
-    // Rule 2: TVL Assessment
     if (securityStats.tvl === "Unknown" || securityStats.tvl === "N/A") {
         score -= 30;
         rules.push("Penalty: TVL data unavailable (-30)");
     } else {
-        // Parse "$12.50M" -> 12.50
         const tvlNum = parseFloat(securityStats.tvl.replace(/[^0-9.]/g, ''));
-        if (tvlNum < 10) { // < $10M
+        if (tvlNum < 10) {
             score -= 20;
             rules.push(`Caution: Low TVL (${securityStats.tvl} < $10M) (-20)`);
         }
     }
 
-    // Determine Verdict
     let verdict = "SECURE";
     if (score < 40) verdict = "DANGER";
     else if (score < 80) verdict = "CAUTION";
