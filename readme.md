@@ -8,7 +8,7 @@ A CLI-based agent that helps users find the safest and most efficient cross-chai
 Unlike standard interfaces that hide costs, the Agent explicitly breaks down fees:
 -   **Bridge Fee**: The protocol's fee (Liquidity Provider Fee + Relayer/Gas Fee).
 -   **Li.Fi Fee**: The aggregator's service fee.
--   **Transparency**: If the Bridge Fee seems high, the Agent explains *why* (e.g., "Includes $2.50 Relayer Gas Fee").
+-   **Transparency**: If the Bridge Fee seems high, the Agent explains *why* .
 
 ### 2. Risk Assessment with Real-Time TVL 🛡️
 -   **Dynamic TVL**: Fetches the latest Total Value Locked from **DefiLlama** to gauge protocol maturity.
