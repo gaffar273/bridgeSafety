@@ -2,15 +2,15 @@
 
 A CLI-based agent that helps users find the safest and most efficient cross-chain bridging routes. It aggregates data from **Li.Fi**, **DefiLlama**, and **L2Beat** to provide transparent fee breakdowns, risk assessments, and money-saving tips.
 
-## 🚀 Key Features
+## Key Features
 
-### 1. Transparent Fee Breakdown 💸
+### 1. Transparent Fee Breakdown
 Unlike standard interfaces that hide costs, the Agent explicitly breaks down fees:
 -   **Bridge Fee**: The protocol's fee (Liquidity Provider Fee + Relayer/Gas Fee).
 -   **Li.Fi Fee**: The aggregator's service fee.
 -   **Transparency**: If the Bridge Fee seems high, the Agent explains *why* .
 
-### 2. Risk Assessment with Real-Time TVL 🛡️
+### 2. Risk Assessment with Real-Time TVL
 -   **Dynamic TVL**: Fetches the latest Total Value Locked from **DefiLlama** to gauge protocol maturity.
 -   **Risk Scoring**:
     -   **SECURE**: High TVL, audited, no recent hacks.
@@ -18,13 +18,13 @@ Unlike standard interfaces that hide costs, the Agent explicitly breaks down fee
     -   **DANGER**: Recently hacked or very low liquidity (<$10M).
 -   **Zero-TVL Handling**: Correctly marks protocols without public TVL data as "N/A" rather than $0.
 
-### 3. Smart Duration Estimates ⏱️
+### 3. Smart Duration Estimates
 -   Converts raw technical execution times into human-readable formats (e.g., "~5 mins", "30 secs").
 
-### 4. Money-Saving Tips 💡
+### 4. Money-Saving Tips
 -   **Aggregator Bypass**: If an aggregator fee is detected, the Agent proactively tips the user: *"You can save $X by using the bridge's official site directly."*
 
-## 📦 Installation & Usage
+## Installation & Usage
 ```bash
 npm install
 npm start
@@ -35,9 +35,9 @@ npm start
 
 ---
 
-## 🛠️ Technical Architecture
+## Technical Architecture
 
-### 1. Folder Structure 📂
+### 1. Folder Structure
 ```text
 blockC/bridgeSafety/
 ├── src/
@@ -51,14 +51,14 @@ blockC/bridgeSafety/
 └── package.json         # Dependencies.
 ```
 
-### 2. Technology Stack 💻
+### 2. Technology Stack
 -   **LangGraph**: For stateful, cyclic agent workflows (Planning -> Tool Call -> Reasoning).
 -   **LangChain**: For tool binding and model interaction (Vertex AI / Gemini).
 -   **Node.js**: Execution environment.
 -   **Axios**: For HTTP requests.
 -   **Chalk**: For colorful CLI output.
 
-### 3. APIs & Endpoints 🌐
+### 3. APIs & Endpoints
 
 #### A. Li.Fi (Aggregator API)
 Used for fetching routes, estimating fees, and getting technical duration.
@@ -69,11 +69,11 @@ Used for fetching routes, estimating fees, and getting technical duration.
 
 #### B. DefiLlama (Security Data)
 Used for risk assessment, TVL (Total Value Locked), and Hack history.
--   `GET /protocols`: Fetches **ALL** protocols (~4MB) to perform robust fuzzy matching on bridge names.
+-   `GET /protocols`: Fetches **ALL** protocols to perform robust fuzzy matching on bridge names.
 -   `GET /protocol/{slug}`: Fetches detailed TVL history for a specific bridge.
 -   `GET /hacks`: Checks if the protocol has been exploited recently.
 
-### 4. Key Approaches & Logic 🧠
+### 4. Key Approaches & Logic
 
 #### Transparency First (The "Fee Split")
 Standard aggregators often bundle fees. This agent splits them:
@@ -91,3 +91,9 @@ Standard aggregators often bundle fees. This agent splits them:
 #### Dynamic Token Resolution
 -   Handles input flexibility (Symbols vs Addresses).
 -   Uses fallback lists for common tokens (USDT/USDC) if API resolution fails.
+
+#### Reliability & Error Handling
+-   **Robust TVL Fetching**:
+    -   Implements extended timeouts (30s) for DefiLlama's heavy `/protocols` endpoint.
+    -   Uses "N/A" as a safe fallback for TVL when API calls fail, preventing "Unknown" or misleading "$0" values.
+-   **Error Resilience**: The agent continues to provide route and fee data even if security stats are temporarily unavailable.
